@@ -5,15 +5,15 @@ A full-stack machine learning application for analyzing smartphone usage pattern
 ## 🎯 Features
 
 - **ML-Powered Predictions**
-  - Productivity Score Prediction (Regression)
-  - Stress Level Prediction (Classification)
+  - Productivity score prediction (Random Forest regression)
+  - Stress band prediction (3-class Random Forest classification: low / medium / high)
   
 - **Data Visualizations**
   - Distribution plots
   - Correlation matrix heatmap
-  - Scatter plots
-  - Occupation-based analysis
-  - Device comparison (Android vs iOS)
+  - Relationship explorer (scatter + trend line)
+  - Gender-based quick insights (coffee intake & exercise)
+  - Stress-band quick insights (productivity & coffee)
   
 - **Interactive Dashboard**
   - Real-time statistics
@@ -58,7 +58,7 @@ A full-stack machine learning application for analyzing smartphone usage pattern
    ```
 
 4. **Ensure the dataset is present**
-   - File: `Smartphone_Usage_Productivity_Dataset_50000.csv` must be in the project root next to `requirements.txt`.
+   - File: `student_productivity_distraction_dataset_20000.csv` must be in the project root next to `requirements.txt`.
 
 **Note:** The project uses recent versions of FastAPI, pandas, scikit-learn, and others that are compatible with Python 3.14.
 
@@ -151,12 +151,17 @@ The project now uses a **student productivity & distraction dataset** with 20,00
 ### Productivity Prediction Model
 - **Type**: Random Forest Regressor
 - **Target**: `productivity_score`
-- **Features**: All numeric columns except `student_id` and the target.
+- **Features** (fixed set, matches frontend + Colab notebook):
+  - `age`, `study_hours_per_day`, `sleep_hours`, `phone_usage_hours`,
+  - `social_media_hours`, `youtube_hours`, `gaming_hours`,
+  - `breaks_per_day`, `coffee_intake_mg`, `exercise_minutes`,
+  - `assignments_completed`, `attendance_percentage`, `stress_level`
 
 ### Stress Band Prediction Model
 - **Type**: Random Forest Classifier
 - **Target**: Binned `stress_level` (3 classes: low, medium, high)
-- **Features**: All numeric columns except `student_id` and `stress_level`.
+- **Features**:
+  - Same habits as above, but with `productivity_score` instead of `stress_level`
 
 ## 📁 Project Structure
 
@@ -174,16 +179,17 @@ ds-proj/
 │   ├── vite.config.ts          # Vite dev server + API proxy
 │   └── src/
 │       ├── main.ts             # Frontend entry point
-│       ├── app.ts              # Neo-brutalist pipeline UI + logic
+│       ├── app.ts              # Neo-brutalist step-by-step pipeline UI + logic
 │       ├── styles.css          # Global Neo Brutalism styling
 │       ├── api/client.ts       # Typed API client
 │       └── types/api.ts        # Shared API response/request types
-├── Smartphone_Usage_Productivity_Dataset_50000.csv
+├── student_productivity_distraction_dataset_20000.csv
 ├── requirements.txt            # Python backend dependencies
 ├── start_backend.sh            # Convenience script to launch backend
 ├── start_frontend.sh           # Convenience script to launch frontend (Vite)
+├── student_productivity_colab.ipynb
 ├── README.md                   # High-level overview & quickstart (this file)
-└── DOCUMENTATION.md            # In-depth architecture & ML documentation
+└── DOCUMENTATION.md            # In-depth architecture, ML logic & Colab notes
 ```
 
 ## 🔧 Development

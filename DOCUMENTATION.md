@@ -95,13 +95,19 @@ The frontend converts this to an `<img src="data:image/png;base64,...">`.
 - Reads `student_productivity_distraction_dataset_20000.csv` from the project root.
 - Stores the full DataFrame in `self.df`.
 
-### 3.2 Feature Engineering
+### 3.2 Feature Sets
 
-- The student dataset is mostly numeric.
-- `prepare_features(df, target_column)`:
-  1. Inspects `self.df` to find all numeric columns.
-  2. Drops the ID column (`student_id`) and the specified target column.
-  3. Returns a `DataFrame` containing only the remaining numeric features.
+Instead of “all numeric columns except the target”, the backend now uses **explicit feature lists** so that
+training, prediction, the frontend, and the Colab notebook all agree on the inputs.
+
+- **Productivity features** (`PRODUCTIVITY_FEATURES`):
+  - `age`, `study_hours_per_day`, `sleep_hours`, `phone_usage_hours`,
+  - `social_media_hours`, `youtube_hours`, `gaming_hours`,
+  - `breaks_per_day`, `coffee_intake_mg`, `exercise_minutes`,
+  - `assignments_completed`, `attendance_percentage`, `stress_level`
+
+- **Stress features** (`STRESS_FEATURES`):
+  - Same as above, but with `productivity_score` instead of `stress_level`
 
 ### 3.3 Training
 
@@ -110,9 +116,10 @@ Performed inside `train_models()` when the backend starts:
 1. **Productivity Prediction**
    - **Target**: `productivity_score` (continuous).
    - **Model**: `RandomForestRegressor` with:
-     - `n_estimators=100`
+     - `n_estimators=200`
      - `random_state=42`
      - `n_jobs=-1` (parallel).
+   - Feature matrix: `self.df[PRODUCTIVITY_FEATURES]`.
    - Train/test split: 80% train, 20% test (`train_test_split`).
    - Metrics (computed on test set):
      - MSE
@@ -120,29 +127,30 @@ Performed inside `train_models()` when the backend starts:
      - R²
 
 2. **Stress Band Prediction**
-   - **Target**: Binned `stress_level` into 3 categories:
-     - `low` (values roughly 1–3)
+   - **Target**: `stress_band` (3-category label derived from `stress_level`):
+     - `low` (roughly 1–3)
      - `medium` (4–7)
      - `high` (8–10)
    - **Model**: `RandomForestClassifier` with:
      - `n_estimators=200`
      - `random_state=42`
      - `n_jobs=-1`.
-   - Uses numeric features with `stress_level` removed.
+   - Feature matrix: `self.df[STRESS_FEATURES]`.
    - Train/test split: 80% train, 20% test, stratified by stress band.
    - Metric: Accuracy.
 
 ### 3.4 Prediction Methods
 
 - `predict_productivity(...)`
-  - Accepts raw values as Python types (ints/floats/strings).
-  - Builds a single-row `DataFrame` with numeric feature columns (age, study hours, sleep, phone usage, etc.).
-  - Calls `prepare_features` to select features.
+  - Accepts raw values mirroring the frontend form (age, study hours, sleep, phone usage, etc., plus `stress_level`).
+  - Builds a single-row `DataFrame` with those fields and then selects `PRODUCTIVITY_FEATURES` as columns.
   - Calls `self.productivity_model.predict(X_input)[0]`.
   - Returns a rounded productivity score.
 
 - `predict_stress(...)`
-  - Similar pattern, but target is the 3-class `stress_band`.
+  - Accepts the same behavioural inputs plus a `productivity_score`.
+  - Builds a single-row `DataFrame` and then selects `STRESS_FEATURES`.
+  - Calls `self.stress_model.predict(X_input)[0]`.
   - Output is one of `"low"`, `"medium"`, or `"high"`.
 
 ### 3.5 Model Performance
@@ -197,7 +205,6 @@ All plot methods:
   - `plot_correlation_matrix()`
   - Computes `.corr()` on numeric columns.
   - Draws a heatmap with:
-    - Annotated coefficients
     - Diverging colormap (`coolwarm`)
 
 - **Scatter with Trend Line**
@@ -209,21 +216,17 @@ All plot methods:
   - `plot_boxplot(column)`
   - Clean single boxplot for a numeric column.
 
-- **Occupation Analysis**
-  - `plot_occupation_analysis()`
-  - 2x2 layout:
-    - Avg. productivity by occupation.
-    - Avg. stress level by occupation.
-    - Avg. daily phone hours by occupation.
-    - Avg. sleep hours by occupation.
+- **Gender Analysis**
+  - `plot_occupation_analysis()` (repurposed)
+  - 1x2 layout:
+    - Average coffee intake (mg) by gender.
+    - Average exercise minutes by gender.
 
-- **Device Comparison (Android vs iOS)**
-  - `plot_device_comparison()`
-  - 2x2 layout:
-    - Avg. productivity by device.
-    - Avg. stress level by device.
-    - Avg. daily phone hours by device.
-    - Avg. sleep hours by device.
+- **Stress-Band Comparison**
+  - `plot_device_comparison()` (repurposed)
+  - 1x2 layout:
+    - Average productivity score by stress band (low / medium / high).
+    - Average coffee intake (mg) by stress band.
 
 ---
 
