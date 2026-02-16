@@ -40,57 +40,69 @@ A full-stack machine learning application for analyzing smartphone usage pattern
 
 **Requirements:**
 - Python 3.14+ (or Python 3.11+ for older versions)
-- All dependencies are compatible with Python 3.14
+- Node.js 18+ and npm (for the Vite + TypeScript frontend)
 
-1. **Clone the repository** (if applicable) or navigate to the project directory
+1. **Clone the repository** (or navigate to the project directory)
 
-2. **Upgrade pip** (recommended)
-```bash
-pip install --upgrade pip
-```
+2. **Install Python dependencies**
+   ```bash
+   pip install --upgrade pip
+   pip install -r requirements.txt
+   ```
 
-3. **Install Python dependencies**
-```bash
-pip install -r requirements.txt
-```
+3. **Install frontend dependencies**
+   ```bash
+   cd frontend
+   npm install
+   cd ..
+   ```
 
-4. **Ensure the dataset is in the root directory**
-   - File: `Smartphone_Usage_Productivity_Dataset_50000.csv`
+4. **Ensure the dataset is present**
+   - File: `Smartphone_Usage_Productivity_Dataset_50000.csv` must be in the project root next to `requirements.txt`.
 
-**Note:** The project uses the latest versions of all dependencies, including pandas 3.0.0 which fully supports Python 3.14. All packages have been tested and are compatible.
+**Note:** The project uses recent versions of FastAPI, pandas, scikit-learn, and others that are compatible with Python 3.14.
 
 ## 🚀 Running the Application
 
-### Start the Backend Server
+You typically want the backend and frontend running in **two terminals**.
+
+### 1. Start the Backend API
+
+From the project root:
 
 ```bash
-cd backend
-python main.py
+./start_backend.sh
 ```
 
-Or using uvicorn directly:
-```bash
-uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-The API will be available at `http://localhost:8000`
-
-### Start the Frontend
-
-The frontend uses **Vite + TypeScript** with a **Neo Brutalism** design and a **step-by-step pipeline** that shows what each backend call does.
+This runs:
 
 ```bash
-cd frontend && npm install && npm run dev
+python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Or use the start script:
+The API will be available at `http://localhost:8000`  
+Interactive docs:
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
+
+### 2. Start the Frontend (Vite Dev Server)
+
+From the project root:
+
 ```bash
 ./start_frontend.sh
 ```
 
+This runs the Vite dev server on port `8080`:
+
+```bash
+cd frontend
+npm run dev
+```
+
 Then open `http://localhost:8080` in your browser.
 
-**Important:** Start the backend first (`./start_backend.sh`) so the frontend can proxy API requests to it.
+**Important:** Start the backend **before** the frontend so that `/api` requests can be proxied correctly from Vite to FastAPI.
 
 ## 📊 API Endpoints
 
@@ -143,19 +155,30 @@ The dataset contains 50,000 records with the following features:
 
 ## 📁 Project Structure
 
-```
+```text
 ds-proj/
 ├── backend/
-│   ├── main.py              # FastAPI application
-│   ├── ml_models.py         # ML model training and prediction
-│   └── visualizations.py   # Data visualization functions
+│   ├── __init__.py
+│   ├── main.py                 # FastAPI application and API routes
+│   ├── ml_models.py            # ML model training, prediction, and metrics
+│   └── visualizations.py       # Matplotlib / seaborn visualizations
 ├── frontend/
-│   ├── index.html          # Main HTML file
-│   ├── styles.css          # CSS styles
-│   └── app.js              # JavaScript application logic
+│   ├── index.html              # Vite entry HTML
+│   ├── package.json            # Frontend dependencies and scripts
+│   ├── tsconfig.json           # TypeScript config
+│   ├── vite.config.ts          # Vite dev server + API proxy
+│   └── src/
+│       ├── main.ts             # Frontend entry point
+│       ├── app.ts              # Neo-brutalist pipeline UI + logic
+│       ├── styles.css          # Global Neo Brutalism styling
+│       ├── api/client.ts       # Typed API client
+│       └── types/api.ts        # Shared API response/request types
 ├── Smartphone_Usage_Productivity_Dataset_50000.csv
-├── requirements.txt        # Python dependencies
-└── README.md              # This file
+├── requirements.txt            # Python backend dependencies
+├── start_backend.sh            # Convenience script to launch backend
+├── start_frontend.sh           # Convenience script to launch frontend (Vite)
+├── README.md                   # High-level overview & quickstart (this file)
+└── DOCUMENTATION.md            # In-depth architecture & ML documentation
 ```
 
 ## 🔧 Development
