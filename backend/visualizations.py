@@ -14,7 +14,12 @@ plt.rcParams['figure.figsize'] = (12, 8)
 
 class Visualizations:
     def __init__(self):
-        csv_path = os.path.join(os.path.dirname(__file__), '..', 'Smartphone_Usage_Productivity_Dataset_50000.csv')
+        # Use the student productivity & distraction dataset
+        csv_path = os.path.join(
+            os.path.dirname(__file__),
+            '..',
+            'student_productivity_distraction_dataset_20000.csv',
+        )
         self.df = pd.read_csv(csv_path)
     
     def _fig_to_base64(self, fig):
@@ -95,73 +100,76 @@ class Visualizations:
         return self._fig_to_base64(fig)
     
     def plot_occupation_analysis(self):
-        """Plot analysis grouped by occupation"""
-        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-        
-        # Productivity by Occupation
-        occupation_prod = self.df.groupby('Occupation')['Work_Productivity_Score'].mean().sort_values()
-        axes[0, 0].barh(occupation_prod.index, occupation_prod.values, color='steelblue')
-        axes[0, 0].set_xlabel('Average Productivity Score')
-        axes[0, 0].set_title('Average Productivity by Occupation', fontsize=12, fontweight='bold')
-        axes[0, 0].grid(True, alpha=0.3, axis='x')
-        
-        # Stress Level by Occupation
-        occupation_stress = self.df.groupby('Occupation')['Stress_Level'].mean().sort_values()
-        axes[0, 1].barh(occupation_stress.index, occupation_stress.values, color='coral')
-        axes[0, 1].set_xlabel('Average Stress Level')
-        axes[0, 1].set_title('Average Stress Level by Occupation', fontsize=12, fontweight='bold')
-        axes[0, 1].grid(True, alpha=0.3, axis='x')
-        
-        # Phone Hours by Occupation
-        occupation_phone = self.df.groupby('Occupation')['Daily_Phone_Hours'].mean().sort_values()
-        axes[1, 0].barh(occupation_phone.index, occupation_phone.values, color='mediumseagreen')
-        axes[1, 0].set_xlabel('Average Daily Phone Hours')
-        axes[1, 0].set_title('Average Phone Usage by Occupation', fontsize=12, fontweight='bold')
-        axes[1, 0].grid(True, alpha=0.3, axis='x')
-        
-        # Sleep Hours by Occupation
-        occupation_sleep = self.df.groupby('Occupation')['Sleep_Hours'].mean().sort_values()
-        axes[1, 1].barh(occupation_sleep.index, occupation_sleep.values, color='plum')
-        axes[1, 1].set_xlabel('Average Sleep Hours')
-        axes[1, 1].set_title('Average Sleep Hours by Occupation', fontsize=12, fontweight='bold')
-        axes[1, 1].grid(True, alpha=0.3, axis='x')
-        
+        """Plot analysis grouped by discrete categories (here: gender)
+
+        We intentionally focus on the two metrics that vary the most
+        across genders in this dataset: coffee intake and exercise
+        minutes. These are less flat than, e.g., productivity.
+        """
+        if 'gender' not in self.df.columns:
+            raise ValueError("Column 'gender' not found in dataset")
+        fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+        # Coffee intake by gender
+        coffee_by_gender = (
+            self.df.groupby('gender')['coffee_intake_mg']
+            .mean()
+            .sort_values()
+        )
+        axes[0].barh(coffee_by_gender.index, coffee_by_gender.values, color='saddlebrown')
+        axes[0].set_xlabel('Average Coffee Intake (mg)')
+        axes[0].set_title('Coffee Intake by Gender', fontsize=12, fontweight='bold')
+        axes[0].grid(True, alpha=0.3, axis='x')
+
+        # Exercise minutes by gender
+        exercise_by_gender = (
+            self.df.groupby('gender')['exercise_minutes']
+            .mean()
+            .sort_values()
+        )
+        axes[1].barh(exercise_by_gender.index, exercise_by_gender.values, color='mediumseagreen')
+        axes[1].set_xlabel('Average Exercise Minutes')
+        axes[1].set_title('Exercise by Gender', fontsize=12, fontweight='bold')
+        axes[1].grid(True, alpha=0.3, axis='x')
+
         plt.tight_layout()
         return self._fig_to_base64(fig)
     
     def plot_device_comparison(self):
-        """Plot comparison between Android and iOS"""
-        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-        
-        device_groups = self.df.groupby('Device_Type')
-        
-        # Productivity comparison
-        prod_by_device = device_groups['Work_Productivity_Score'].mean()
-        axes[0, 0].bar(prod_by_device.index, prod_by_device.values, color=['#34A853', '#007AFF'])
-        axes[0, 0].set_ylabel('Average Productivity Score')
-        axes[0, 0].set_title('Productivity Score: Android vs iOS', fontsize=12, fontweight='bold')
-        axes[0, 0].grid(True, alpha=0.3, axis='y')
-        
-        # Stress Level comparison
-        stress_by_device = device_groups['Stress_Level'].mean()
-        axes[0, 1].bar(stress_by_device.index, stress_by_device.values, color=['#34A853', '#007AFF'])
-        axes[0, 1].set_ylabel('Average Stress Level')
-        axes[0, 1].set_title('Stress Level: Android vs iOS', fontsize=12, fontweight='bold')
-        axes[0, 1].grid(True, alpha=0.3, axis='y')
-        
-        # Phone Hours comparison
-        phone_by_device = device_groups['Daily_Phone_Hours'].mean()
-        axes[1, 0].bar(phone_by_device.index, phone_by_device.values, color=['#34A853', '#007AFF'])
-        axes[1, 0].set_ylabel('Average Daily Phone Hours')
-        axes[1, 0].set_title('Phone Usage: Android vs iOS', fontsize=12, fontweight='bold')
-        axes[1, 0].grid(True, alpha=0.3, axis='y')
-        
-        # Sleep Hours comparison
-        sleep_by_device = device_groups['Sleep_Hours'].mean()
-        axes[1, 1].bar(sleep_by_device.index, sleep_by_device.values, color=['#34A853', '#007AFF'])
-        axes[1, 1].set_ylabel('Average Sleep Hours')
-        axes[1, 1].set_title('Sleep Hours: Android vs iOS', fontsize=12, fontweight='bold')
-        axes[1, 1].grid(True, alpha=0.3, axis='y')
-        
+        """Plot comparison between low/medium/high stress bands.
+
+        We focus on two of the more interesting (less linear) metrics:
+        productivity_score and coffee_intake_mg.
+        """
+        if 'stress_level' not in self.df.columns:
+            raise ValueError("Column 'stress_level' not found in dataset")
+
+        bins = [0, 3, 7, 10]
+        labels = ['low', 'medium', 'high']
+        self.df['stress_band'] = pd.cut(
+            self.df['stress_level'],
+            bins=bins,
+            labels=labels,
+            include_lowest=True,
+        )
+
+        fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+        band_groups = self.df.groupby('stress_band')
+
+        # Productivity comparison (users tend to report lower productivity at higher stress)
+        prod_by_band = band_groups['productivity_score'].mean()
+        axes[0].bar(prod_by_band.index.astype(str), prod_by_band.values, color=['#34A853', '#FFB300', '#EA4335'])
+        axes[0].set_ylabel('Average Productivity Score')
+        axes[0].set_title('Productivity vs Stress Band', fontsize=12, fontweight='bold')
+        axes[0].grid(True, alpha=0.3, axis='y')
+
+        # Coffee intake comparison (non‑linear bump around medium stress)
+        coffee_by_band = band_groups['coffee_intake_mg'].mean()
+        axes[1].bar(coffee_by_band.index.astype(str), coffee_by_band.values, color=['#34A853', '#FFB300', '#EA4335'])
+        axes[1].set_ylabel('Average Coffee Intake (mg)')
+        axes[1].set_title('Coffee Intake vs Stress Band', fontsize=12, fontweight='bold')
+        axes[1].grid(True, alpha=0.3, axis='y')
+
         plt.tight_layout()
         return self._fig_to_base64(fig)

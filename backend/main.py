@@ -44,23 +44,36 @@ def get_sample_data(limit: int = 100):
 def predict_productivity(
     age: int,
     gender: str,
-    occupation: str,
-    device_type: str,
-    daily_phone_hours: float,
-    social_media_hours: float,
+    study_hours_per_day: float,
     sleep_hours: float,
+    phone_usage_hours: float,
+    social_media_hours: float,
+    youtube_hours: float,
+    gaming_hours: float,
+    breaks_per_day: int,
+    coffee_intake_mg: float,
+    exercise_minutes: float,
+    assignments_completed: int,
+    attendance_percentage: float,
     stress_level: int,
-    app_usage_count: int,
-    caffeine_intake: float,
-    weekend_screen_time: float
 ):
     """Predict productivity score based on user inputs"""
     try:
         prediction = ml_models.predict_productivity(
-            age, gender, occupation, device_type,
-            daily_phone_hours, social_media_hours,
-            sleep_hours, stress_level, app_usage_count,
-            caffeine_intake, weekend_screen_time
+            age,
+            gender,
+            study_hours_per_day,
+            sleep_hours,
+            phone_usage_hours,
+            social_media_hours,
+            youtube_hours,
+            gaming_hours,
+            breaks_per_day,
+            coffee_intake_mg,
+            exercise_minutes,
+            assignments_completed,
+            attendance_percentage,
+            stress_level,
         )
         return {"predicted_productivity": float(prediction)}
     except Exception as e:
@@ -70,25 +83,38 @@ def predict_productivity(
 def predict_stress(
     age: int,
     gender: str,
-    occupation: str,
-    device_type: str,
-    daily_phone_hours: float,
-    social_media_hours: float,
+    study_hours_per_day: float,
     sleep_hours: float,
-    work_productivity_score: int,
-    app_usage_count: int,
-    caffeine_intake: float,
-    weekend_screen_time: float
+    phone_usage_hours: float,
+    social_media_hours: float,
+    youtube_hours: float,
+    gaming_hours: float,
+    breaks_per_day: int,
+    coffee_intake_mg: float,
+    exercise_minutes: float,
+    assignments_completed: int,
+    attendance_percentage: float,
+    productivity_score: float,
 ):
     """Predict stress level based on user inputs"""
     try:
         prediction = ml_models.predict_stress(
-            age, gender, occupation, device_type,
-            daily_phone_hours, social_media_hours,
-            sleep_hours, work_productivity_score,
-            app_usage_count, caffeine_intake, weekend_screen_time
+            age,
+            gender,
+            study_hours_per_day,
+            sleep_hours,
+            phone_usage_hours,
+            social_media_hours,
+            youtube_hours,
+            gaming_hours,
+            breaks_per_day,
+            coffee_intake_mg,
+            exercise_minutes,
+            assignments_completed,
+            attendance_percentage,
+            productivity_score,
         )
-        return {"predicted_stress_level": int(prediction)}
+        return {"predicted_stress_band": prediction}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

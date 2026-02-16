@@ -125,33 +125,38 @@ Then open `http://localhost:8080` in your browser.
 
 ## 📈 Dataset Information
 
-The dataset contains 50,000 records with the following features:
+The project now uses a **student productivity & distraction dataset** with 20,000 records:
 
-- **User_ID** - Unique identifier
-- **Age** - User age (18-60)
-- **Gender** - Male, Female, Other
-- **Occupation** - Student, Professional, Freelancer, Business Owner
-- **Device_Type** - Android / iOS
-- **Daily_Phone_Hours** - Average daily phone usage
-- **Social_Media_Hours** - Daily time spent on social media
-- **Work_Productivity_Score** - Productivity score (1-10)
-- **Sleep_Hours** - Average sleep duration
-- **Stress_Level** - Stress rating (1-10)
-- **App_Usage_Count** - Number of apps used daily
-- **Caffeine_Intake_Cups** - Daily caffeine consumption
-- **Weekend_Screen_Time_Hours** - Screen time during weekends
+- **student_id** – Unique identifier
+- **age** – Student age
+- **gender** – Male, Female, Other
+- **study_hours_per_day** – Average daily study time
+- **sleep_hours** – Average sleep duration
+- **phone_usage_hours** – Daily phone usage hours
+- **social_media_hours** – Time spent on social media
+- **youtube_hours** – Time spent on YouTube
+- **gaming_hours** – Time spent gaming
+- **breaks_per_day** – Number of breaks taken per day
+- **coffee_intake_mg** – Daily caffeine intake in mg
+- **exercise_minutes** – Daily exercise duration
+- **assignments_completed** – Number of assignments completed
+- **attendance_percentage** – Attendance rate
+- **stress_level** – Stress rating (1–10)
+- **focus_score** – Focus/attention score
+- **final_grade** – Final academic grade
+- **productivity_score** – Overall productivity score
 
 ## 🤖 Machine Learning Models
 
 ### Productivity Prediction Model
 - **Type**: Random Forest Regressor
-- **Target**: Work_Productivity_Score (1-10)
-- **Features**: Age, Gender, Occupation, Device_Type, Daily_Phone_Hours, Social_Media_Hours, Sleep_Hours, App_Usage_Count, Caffeine_Intake_Cups, Weekend_Screen_Time_Hours
+- **Target**: `productivity_score`
+- **Features**: All numeric columns except `student_id` and the target.
 
-### Stress Level Prediction Model
+### Stress Band Prediction Model
 - **Type**: Random Forest Classifier
-- **Target**: Stress_Level (1-10)
-- **Features**: Age, Gender, Occupation, Device_Type, Daily_Phone_Hours, Social_Media_Hours, Sleep_Hours, Work_Productivity_Score, App_Usage_Count, Caffeine_Intake_Cups, Weekend_Screen_Time_Hours
+- **Target**: Binned `stress_level` (3 classes: low, medium, high)
+- **Features**: All numeric columns except `student_id` and `stress_level`.
 
 ## 📁 Project Structure
 

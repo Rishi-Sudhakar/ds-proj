@@ -92,41 +92,23 @@ The frontend converts this to an `<img src="data:image/png;base64,...">`.
 
 ### 3.1 Data Loading
 
-- Reads `Smartphone_Usage_Productivity_Dataset_50000.csv` from the project root.
+- Reads `student_productivity_distraction_dataset_20000.csv` from the project root.
 - Stores the full DataFrame in `self.df`.
 
 ### 3.2 Feature Engineering
 
-- Categorical columns:
-  - `Gender` (Male/Female/Other)
-  - `Occupation` (Student/Professional/Freelancer/Business Owner)
-  - `Device_Type` (Android/iOS)
-- Each is encoded using `sklearn.preprocessing.LabelEncoder` and stored in `self.label_encoders`.
-- Numeric feature columns used by both models:
-
-  - `Age`
-  - `Gender` (encoded)
-  - `Occupation` (encoded)
-  - `Device_Type` (encoded)
-  - `Daily_Phone_Hours`
-  - `Social_Media_Hours`
-  - `Sleep_Hours`
-  - `App_Usage_Count`
-  - `Caffeine_Intake_Cups`
-  - `Weekend_Screen_Time_Hours`
-
-The helper method `prepare_features(df)`:
-
-1. Copies the given DataFrame.
-2. Applies label encoders to categorical fields.
-3. Returns a `DataFrame` with the selected numeric feature columns only.
+- The student dataset is mostly numeric.
+- `prepare_features(df, target_column)`:
+  1. Inspects `self.df` to find all numeric columns.
+  2. Drops the ID column (`student_id`) and the specified target column.
+  3. Returns a `DataFrame` containing only the remaining numeric features.
 
 ### 3.3 Training
 
 Performed inside `train_models()` when the backend starts:
 
 1. **Productivity Prediction**
-   - **Target**: `Work_Productivity_Score` (1–10).
+   - **Target**: `productivity_score` (continuous).
    - **Model**: `RandomForestRegressor` with:
      - `n_estimators=100`
      - `random_state=42`
@@ -137,28 +119,31 @@ Performed inside `train_models()` when the backend starts:
      - RMSE
      - R²
 
-2. **Stress Level Prediction**
-   - **Target**: `Stress_Level` (1–10).
+2. **Stress Band Prediction**
+   - **Target**: Binned `stress_level` into 3 categories:
+     - `low` (values roughly 1–3)
+     - `medium` (4–7)
+     - `high` (8–10)
    - **Model**: `RandomForestClassifier` with:
-     - `n_estimators=100`
+     - `n_estimators=200`
      - `random_state=42`
      - `n_jobs=-1`.
-   - Uses the same feature matrix `X` but different target `y_stress`.
-   - Train/test split: 80% train, 20% test.
+   - Uses numeric features with `stress_level` removed.
+   - Train/test split: 80% train, 20% test, stratified by stress band.
    - Metric: Accuracy.
 
 ### 3.4 Prediction Methods
 
 - `predict_productivity(...)`
   - Accepts raw values as Python types (ints/floats/strings).
-  - Builds a single-row `DataFrame` with the same columns as the training data.
-  - Calls `prepare_features` to encode and select features.
+  - Builds a single-row `DataFrame` with numeric feature columns (age, study hours, sleep, phone usage, etc.).
+  - Calls `prepare_features` to select features.
   - Calls `self.productivity_model.predict(X_input)[0]`.
-  - Clamps and rounds to `[1, 10]` with `round(prediction, 2)`.
+  - Returns a rounded productivity score.
 
 - `predict_stress(...)`
-  - Similar pattern, but target is `Stress_Level`.
-  - Output is clamped to `[1, 10]` and cast to `int`.
+  - Similar pattern, but target is the 3-class `stress_band`.
+  - Output is one of `"low"`, `"medium"`, or `"high"`.
 
 ### 3.5 Model Performance
 

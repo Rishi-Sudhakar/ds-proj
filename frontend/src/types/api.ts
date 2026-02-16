@@ -34,14 +34,17 @@ export interface ModelPerformance {
 export interface PredictionParams {
   age: number;
   gender: string;
-  occupation: string;
-  device_type: string;
-  daily_phone_hours: number;
+  study_hours_per_day: number;
   social_media_hours: number;
   sleep_hours: number;
-  app_usage_count: number;
-  caffeine_intake: number;
-  weekend_screen_time: number;
+  phone_usage_hours: number;
+  youtube_hours: number;
+  gaming_hours: number;
+  breaks_per_day: number;
+  coffee_intake_mg: number;
+  exercise_minutes: number;
+  assignments_completed: number;
+  attendance_percentage: number;
 }
 
 export interface ProductivityParams extends PredictionParams {
@@ -49,5 +52,5 @@ export interface ProductivityParams extends PredictionParams {
 }
 
 export interface StressParams extends PredictionParams {
-  work_productivity_score: number;
+  productivity_score: number;
 }

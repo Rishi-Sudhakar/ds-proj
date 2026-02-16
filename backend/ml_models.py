@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import mean_squared_error, r2_score, accuracy_score, classification_report
+from sklearn.metrics import mean_squared_error, r2_score, accuracy_score
 import os
 
 class MLModels:
@@ -11,13 +11,17 @@ class MLModels:
         self.df = None
         self.productivity_model = None
         self.stress_model = None
-        self.label_encoders = {}
         self.load_data()
         self.train_models()
     
     def load_data(self):
         """Load the dataset"""
-        csv_path = os.path.join(os.path.dirname(__file__), '..', 'Smartphone_Usage_Productivity_Dataset_50000.csv')
+        # Use the student productivity & distraction dataset as the single source of truth
+        csv_path = os.path.join(
+            os.path.dirname(__file__),
+            '..',
+            'student_productivity_distraction_dataset_20000.csv',
+        )
         self.df = pd.read_csv(csv_path)
         
     def get_data_stats(self):
@@ -29,8 +33,8 @@ class MLModels:
             "categorical_counts": {}
         }
         
-        # Get counts for categorical columns
-        categorical_cols = ['Gender', 'Occupation', 'Device_Type']
+        # Get counts for categorical columns (dataset-specific)
+        categorical_cols = ['gender']
         for col in categorical_cols:
             if col in self.df.columns:
                 stats["categorical_counts"][col] = self.df[col].value_counts().to_dict()
@@ -41,114 +45,205 @@ class MLModels:
         """Get sample data"""
         return self.df.head(limit).to_dict(orient='records')
     
-    def prepare_features(self, df):
-        """Prepare features for ML models"""
-        df_processed = df.copy()
-        
-        # Encode categorical variables
-        categorical_cols = ['Gender', 'Occupation', 'Device_Type']
-        for col in categorical_cols:
-            if col not in self.label_encoders:
-                self.label_encoders[col] = LabelEncoder()
-                self.label_encoders[col].fit(self.df[col].unique())
-            
-            df_processed[col] = self.label_encoders[col].transform(df_processed[col])
-        
-        # Select features (excluding User_ID and target variables)
-        feature_cols = [
-            'Age', 'Gender', 'Occupation', 'Device_Type',
-            'Daily_Phone_Hours', 'Social_Media_Hours', 'Sleep_Hours',
-            'App_Usage_Count', 'Caffeine_Intake_Cups', 'Weekend_Screen_Time_Hours'
-        ]
-        
-        return df_processed[feature_cols]
-    
     def train_models(self):
         """Train ML models"""
-        # Prepare features
-        X = self.prepare_features(self.df)
-        
-        # Train Productivity Prediction Model (Regression)
-        y_productivity = self.df['Work_Productivity_Score']
+        # Explicit feature sets so training and prediction always agree
+        productivity_features = [
+            'age',
+            'study_hours_per_day',
+            'sleep_hours',
+            'phone_usage_hours',
+            'social_media_hours',
+            'youtube_hours',
+            'gaming_hours',
+            'breaks_per_day',
+            'coffee_intake_mg',
+            'exercise_minutes',
+            'assignments_completed',
+            'attendance_percentage',
+            'stress_level',
+        ]
+
+        stress_features = [
+            'age',
+            'study_hours_per_day',
+            'sleep_hours',
+            'phone_usage_hours',
+            'social_media_hours',
+            'youtube_hours',
+            'gaming_hours',
+            'breaks_per_day',
+            'coffee_intake_mg',
+            'exercise_minutes',
+            'assignments_completed',
+            'attendance_percentage',
+            'productivity_score',
+        ]
+
+        # ----- Productivity score model (Regression: RandomForestRegressor) -----
+        y_productivity = self.df['productivity_score']
+        X = self.df[productivity_features]
         X_train_prod, X_test_prod, y_train_prod, y_test_prod = train_test_split(
             X, y_productivity, test_size=0.2, random_state=42
         )
-        
-        self.productivity_model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
-        self.productivity_model.fit(X_train_prod, y_train_prod)
-        
-        # Train Stress Level Prediction Model (Classification)
-        y_stress = self.df['Stress_Level']
-        X_train_stress, X_test_stress, y_train_stress, y_test_stress = train_test_split(
-            X, y_stress, test_size=0.2, random_state=42
+
+        self.productivity_model = RandomForestRegressor(
+            n_estimators=200, random_state=42, n_jobs=-1
         )
-        
-        self.stress_model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+        self.productivity_model.fit(X_train_prod, y_train_prod)
+
+        # ----- Stress level model (Classification: RandomForestClassifier) -----
+        # Bin numeric stress_level into 3 bands: low / medium / high
+        if 'stress_level' not in self.df.columns:
+            raise ValueError("Column 'stress_level' not found in dataset")
+        bins = [0, 3, 7, 10]
+        labels = ['low', 'medium', 'high']
+        self.df['stress_band'] = pd.cut(
+            self.df['stress_level'],
+            bins=bins,
+            labels=labels,
+            include_lowest=True,
+        )
+        y_stress = self.df['stress_band']
+        X_stress = self.df[stress_features]
+        X_train_stress, X_test_stress, y_train_stress, y_test_stress = train_test_split(
+            X_stress, y_stress, test_size=0.2, random_state=42, stratify=y_stress
+        )
+
+        self.stress_model = RandomForestClassifier(
+            n_estimators=200, random_state=42, n_jobs=-1
+        )
         self.stress_model.fit(X_train_stress, y_train_stress)
-        
+
         # Store test sets for performance metrics
         self.X_test_prod = X_test_prod
         self.y_test_prod = y_test_prod
         self.X_test_stress = X_test_stress
         self.y_test_stress = y_test_stress
     
-    def predict_productivity(self, age, gender, occupation, device_type,
-                           daily_phone_hours, social_media_hours,
-                           sleep_hours, stress_level, app_usage_count,
-                           caffeine_intake, weekend_screen_time):
+    def predict_productivity(
+        self,
+        age,
+        gender,
+        study_hours_per_day,
+        sleep_hours,
+        phone_usage_hours,
+        social_media_hours,
+        youtube_hours,
+        gaming_hours,
+        breaks_per_day,
+        coffee_intake_mg,
+        exercise_minutes,
+        assignments_completed,
+        attendance_percentage,
+        stress_level,
+    ):
         """Predict productivity score"""
         if self.productivity_model is None:
             raise ValueError("Model not trained yet")
         
         # Create input dataframe
-        input_data = pd.DataFrame({
-            'Age': [age],
-            'Gender': [gender],
-            'Occupation': [occupation],
-            'Device_Type': [device_type],
-            'Daily_Phone_Hours': [daily_phone_hours],
-            'Social_Media_Hours': [social_media_hours],
-            'Sleep_Hours': [sleep_hours],
-            'App_Usage_Count': [app_usage_count],
-            'Caffeine_Intake_Cups': [caffeine_intake],
-            'Weekend_Screen_Time_Hours': [weekend_screen_time]
-        })
+        input_data = pd.DataFrame(
+            {
+                'age': [age],
+                'study_hours_per_day': [study_hours_per_day],
+                'sleep_hours': [sleep_hours],
+                'phone_usage_hours': [phone_usage_hours],
+                'social_media_hours': [social_media_hours],
+                'youtube_hours': [youtube_hours],
+                'gaming_hours': [gaming_hours],
+                'breaks_per_day': [breaks_per_day],
+                'coffee_intake_mg': [coffee_intake_mg],
+                'exercise_minutes': [exercise_minutes],
+                'assignments_completed': [assignments_completed],
+                'attendance_percentage': [attendance_percentage],
+                'stress_level': [stress_level],
+            }
+        )
         
-        # Prepare features
-        X_input = self.prepare_features(input_data)
+        # Use the same feature ordering as in training
+        feature_cols = [
+            'age',
+            'study_hours_per_day',
+            'sleep_hours',
+            'phone_usage_hours',
+            'social_media_hours',
+            'youtube_hours',
+            'gaming_hours',
+            'breaks_per_day',
+            'coffee_intake_mg',
+            'exercise_minutes',
+            'assignments_completed',
+            'attendance_percentage',
+            'stress_level',
+        ]
+        X_input = input_data[feature_cols]
         
         # Predict
         prediction = self.productivity_model.predict(X_input)[0]
-        return max(1, min(10, round(prediction, 2)))  # Clamp between 1-10
+        # Productivity score is naturally continuous; return as-is but rounded
+        return float(round(prediction, 2))
     
-    def predict_stress(self, age, gender, occupation, device_type,
-                      daily_phone_hours, social_media_hours,
-                      sleep_hours, work_productivity_score, app_usage_count,
-                      caffeine_intake, weekend_screen_time):
+    def predict_stress(
+        self,
+        age,
+        gender,
+        study_hours_per_day,
+        sleep_hours,
+        phone_usage_hours,
+        social_media_hours,
+        youtube_hours,
+        gaming_hours,
+        breaks_per_day,
+        coffee_intake_mg,
+        exercise_minutes,
+        assignments_completed,
+        attendance_percentage,
+        productivity_score,
+    ):
         """Predict stress level"""
         if self.stress_model is None:
             raise ValueError("Model not trained yet")
         
         # Create input dataframe
-        input_data = pd.DataFrame({
-            'Age': [age],
-            'Gender': [gender],
-            'Occupation': [occupation],
-            'Device_Type': [device_type],
-            'Daily_Phone_Hours': [daily_phone_hours],
-            'Social_Media_Hours': [social_media_hours],
-            'Sleep_Hours': [sleep_hours],
-            'App_Usage_Count': [app_usage_count],
-            'Caffeine_Intake_Cups': [caffeine_intake],
-            'Weekend_Screen_Time_Hours': [weekend_screen_time]
-        })
+        input_data = pd.DataFrame(
+            {
+                'age': [age],
+                'study_hours_per_day': [study_hours_per_day],
+                'sleep_hours': [sleep_hours],
+                'phone_usage_hours': [phone_usage_hours],
+                'social_media_hours': [social_media_hours],
+                'youtube_hours': [youtube_hours],
+                'gaming_hours': [gaming_hours],
+                'breaks_per_day': [breaks_per_day],
+                'coffee_intake_mg': [coffee_intake_mg],
+                'exercise_minutes': [exercise_minutes],
+                'assignments_completed': [assignments_completed],
+                'attendance_percentage': [attendance_percentage],
+                'productivity_score': [productivity_score],
+            }
+        )
         
-        # Prepare features
-        X_input = self.prepare_features(input_data)
+        feature_cols = [
+            'age',
+            'study_hours_per_day',
+            'sleep_hours',
+            'phone_usage_hours',
+            'social_media_hours',
+            'youtube_hours',
+            'gaming_hours',
+            'breaks_per_day',
+            'coffee_intake_mg',
+            'exercise_minutes',
+            'assignments_completed',
+            'attendance_percentage',
+            'productivity_score',
+        ]
+        X_input = input_data[feature_cols]
         
         # Predict
         prediction = self.stress_model.predict(X_input)[0]
-        return int(max(1, min(10, prediction)))  # Clamp between 1-10
+        return str(prediction)
     
     def get_model_performance(self):
         """Get model performance metrics"""
@@ -159,20 +254,21 @@ class MLModels:
         y_pred_prod = self.productivity_model.predict(self.X_test_prod)
         prod_mse = mean_squared_error(self.y_test_prod, y_pred_prod)
         prod_r2 = r2_score(self.y_test_prod, y_pred_prod)
-        
-        # Stress model metrics
-        y_pred_stress = self.stress_model.predict(self.X_test_stress)
-        stress_accuracy = accuracy_score(self.y_test_stress, y_pred_stress)
-        
+
         return {
             "productivity_model": {
-                "type": "Regression (Random Forest)",
+                "type": "Productivity score (RandomForestRegressor, regression)",
                 "mse": float(prod_mse),
                 "r2_score": float(prod_r2),
-                "rmse": float(np.sqrt(prod_mse))
+                "rmse": float(np.sqrt(prod_mse)),
             },
             "stress_model": {
-                "type": "Classification (Random Forest)",
-                "accuracy": float(stress_accuracy)
-            }
+                "type": "Stress band (RandomForestClassifier, 3-class: low/medium/high)",
+                "accuracy": float(
+                    accuracy_score(
+                        self.y_test_stress,
+                        self.stress_model.predict(self.X_test_stress),
+                    )
+                ),
+            },
         }
