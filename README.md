@@ -7,14 +7,12 @@ A full-stack machine learning application for analyzing smartphone usage pattern
 - **ML-Powered Predictions**
   - Productivity score prediction (Random Forest regression)
   - Stress band prediction (3-class Random Forest classification: low / medium / high)
-  
 - **Data Visualizations**
   - Distribution plots
   - Correlation matrix heatmap
   - Relationship explorer (scatter + trend line)
   - Gender-based quick insights (coffee intake & exercise)
   - Stress-band quick insights (productivity & coffee)
-  
 - **Interactive Dashboard**
   - Real-time statistics
   - Model performance metrics
@@ -23,34 +21,38 @@ A full-stack machine learning application for analyzing smartphone usage pattern
 ## 🛠️ Tech Stack
 
 ### Backend
+
 - **FastAPI** (v0.129.0+) - Modern Python web framework
 - **scikit-learn** (v1.8.0+) - Machine learning models (Random Forest)
 - **pandas** (v3.0.0+) - Data manipulation (Python 3.14 compatible)
 - **numpy** (v2.4.2+) - Numerical computations
-- **matplotlib** (v3.10.8+) - Data visualization
-- **seaborn** (v0.13.2+) - Statistical visualizations
 
 ### Frontend
+
 - **TypeScript** - Type-safe JavaScript
 - **Vite** - Fast dev server and build tool
+- **Chart.js** - Interactive client-side visualizations
 - **Neo Brutalism** - Bold, high-contrast UI design
 - **Step-by-step pipeline** - See backend steps as you explore
 
 ## 📦 Installation
 
 **Requirements:**
+
 - Python 3.14+ (or Python 3.11+ for older versions)
 - Node.js 18+ and npm (for the Vite + TypeScript frontend)
 
 1. **Clone the repository** (or navigate to the project directory)
 
 2. **Install Python dependencies**
+
    ```bash
    pip install --upgrade pip
    pip install -r requirements.txt
    ```
 
 3. **Install frontend dependencies**
+
    ```bash
    cd frontend
    npm install
@@ -82,6 +84,7 @@ python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 
 The API will be available at `http://localhost:8000`  
 Interactive docs:
+
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
@@ -107,21 +110,23 @@ Then open `http://localhost:8080` in your browser.
 ## 📊 API Endpoints
 
 ### Data Endpoints
+
 - `GET /api/data/stats` - Get dataset statistics
 - `GET /api/data/sample?limit=100` - Get sample data
 
 ### ML Prediction Endpoints
+
 - `POST /api/ml/predict/productivity` - Predict productivity score
 - `POST /api/ml/predict/stress` - Predict stress level
 - `GET /api/ml/model/performance` - Get model performance metrics
 
-### Visualization Endpoints
-- `GET /api/viz/distribution/{column}` - Get distribution plot
-- `GET /api/viz/correlation` - Get correlation matrix
-- `GET /api/viz/scatter/{x_column}/{y_column}` - Get scatter plot
-- `GET /api/viz/boxplot/{column}` - Get boxplot
-- `GET /api/viz/occupation-analysis` - Get occupation analysis
-- `GET /api/viz/device-comparison` - Get device comparison
+### Visualization Endpoints (JSON Data)
+
+- `GET /api/viz/distribution/{column}` - Get histogram and boxplot data
+- `GET /api/viz/correlation` - Get correlation matrix data
+- `GET /api/viz/scatter/{x_column}/{y_column}` - Get scatter plot points and trend line
+- `GET /api/viz/occupation-analysis` - Get gender-based productivity & study hours metrics
+- `GET /api/viz/device-comparison` - Get stress-based productivity & sleep hours metrics
 
 ## 📈 Dataset Information
 
@@ -149,6 +154,7 @@ The project now uses a **student productivity & distraction dataset** with 20,00
 ## 🤖 Machine Learning Models
 
 ### Productivity Prediction Model
+
 - **Type**: Random Forest Regressor
 - **Target**: `productivity_score`
 - **Features** (fixed set, matches frontend + Colab notebook):
@@ -158,6 +164,7 @@ The project now uses a **student productivity & distraction dataset** with 20,00
   - `assignments_completed`, `attendance_percentage`, `stress_level`
 
 ### Stress Band Prediction Model
+
 - **Type**: Random Forest Classifier
 - **Target**: Binned `stress_level` (3 classes: low, medium, high)
 - **Features**:
@@ -195,12 +202,16 @@ ds-proj/
 ## 🔧 Development
 
 ### Backend Development
+
 The backend uses FastAPI with automatic API documentation available at:
+
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
 ### Frontend Development
+
 The frontend is a single-page application with tabbed navigation:
+
 - Dashboard: Overview statistics and model performance
 - ML Predictions: Interactive prediction forms
 - Visualizations: Data visualization gallery
@@ -210,7 +221,7 @@ The frontend is a single-page application with tabbed navigation:
 
 - The ML models are trained automatically when the backend starts
 - Model training uses 80% of the data for training and 20% for testing
-- All visualizations are generated server-side and returned as base64-encoded images
+- All visualizations are rendered client-side using Chart.js based on JSON data from the backend
 - CORS is enabled for all origins (adjust in production)
 
 ## 🎓 Use Cases

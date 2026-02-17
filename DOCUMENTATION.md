@@ -10,12 +10,12 @@ This document explains the architecture, data flow, and machine learning logic f
   - Serves a REST API for:
     - Dataset stats & sampling
     - ML model predictions
-    - Visualization images (PNG as base64)
+    - Visualization data (JSON)
   - Trains ML models on startup.
 - **ML Layer**: Encapsulated in `backend/ml_models.py`
   - Handles dataset loading, feature engineering, training, prediction, and metrics.
 - **Visualization Layer**: `backend/visualizations.py`
-  - Uses pandas + matplotlib + seaborn to generate plots.
+  - Processes data using pandas to return structured JSON for charts.
 - **Frontend**: Vite + TypeScript SPA in `frontend/`
   - Neo-brutalist UI.
   - Pipeline-style layout that guides you through:
@@ -70,21 +70,14 @@ The typical runtime flow:
       - Regression metrics (MSE, RMSE, R²) for productivity model.
       - Classification accuracy for stress model.
 
-- **Visualizations**
-  - `GET /api/viz/distribution/{column}`
-  - `GET /api/viz/correlation`
-  - `GET /api/viz/scatter/{x_column}/{y_column}`
-  - `GET /api/viz/boxplot/{column}`
-  - `GET /api/viz/occupation-analysis`
-  - `GET /api/viz/device-comparison`
+- **Visualizations (Returns JSON Data)**
+  - `GET /api/viz/distribution/{column}` -> Histogram bins & boxplot stats
+  - `GET /api/viz/correlation` -> Correlation matrix
+  - `GET /api/viz/scatter/{x_column}/{y_column}` -> Scatter points & trend line
+  - `GET /api/viz/occupation-analysis` -> Gender-based productivity metrics
+  - `GET /api/viz/device-comparison` -> Stress-based sleep metrics
 
-Each of these returns JSON:
-
-```json
-{ "image": "<base64-png>" }
-```
-
-The frontend converts this to an `<img src="data:image/png;base64,...">`.
+Each of these returns structured JSON for the frontend to render.
 
 ---
 
@@ -180,53 +173,22 @@ Performed inside `train_models()` when the backend starts:
 
 ## 4. Visualizations (`backend/visualizations.py`)
 
-### 4.1 Shared Setup
+### 4.1 Data Processing
 
-- Loads the same CSV into `self.df`.
-- Uses:
-  - `matplotlib` (with `Agg` backend for server-side plotting)
-  - `seaborn` (for nicer defaults)
+Instead of generating images, the backend now calculates the raw data needed for client-side rendering.
 
-All plot methods:
-1. Create a `matplotlib` figure.
-2. Draw the plot.
-3. Save to an in-memory buffer via `BytesIO`.
-4. Encode to base64 and return as a string.
+- **Distribution Data**:
+  - `get_distribution_data(column)`: Returns histogram bins (`numpy.histogram`) and boxplot statistics (min, q1, median, q3, max).
 
-### 4.2 Plot Types
+- **Correlation Data**:
+  - `get_correlation_matrix_data()`: Returns columns labels and correlation values matrix.
 
-- **Distribution + Boxplot**
-  - `plot_distribution(column)`
-  - 1x2 layout:
-    - Histogram (with ~50 bins) for the selected column.
-    - Boxplot of the same column (outliers/scale).
+- **Scatter Data**:
+  - `get_scatter_data(x, y)`: Returns list of `{x, y}` points and linear regression parameters (slope, intercept) for the trend line.
 
-- **Correlation Matrix**
-  - `plot_correlation_matrix()`
-  - Computes `.corr()` on numeric columns.
-  - Draws a heatmap with:
-    - Diverging colormap (`coolwarm`)
-
-- **Scatter with Trend Line**
-  - `plot_scatter(x_column, y_column)`
-  - Plain scatter plot + linear trend line.
-  - `numpy.polyfit` + `poly1d` to fit and plot a red dashed line.
-
-- **Boxplot**
-  - `plot_boxplot(column)`
-  - Clean single boxplot for a numeric column.
-
-- **Gender Analysis**
-  - `plot_occupation_analysis()` (repurposed)
-  - 1x2 layout:
-    - Average coffee intake (mg) by gender.
-    - Average exercise minutes by gender.
-
-- **Stress-Band Comparison**
-  - `plot_device_comparison()` (repurposed)
-  - 1x2 layout:
-    - Average productivity score by stress band (low / medium / high).
-    - Average coffee intake (mg) by stress band.
+- **Metrics Analysis**:
+  - `get_occupation_analysis_data()`: Returns aggregated Productivity and Study Hours by Gender.
+  - `get_device_comparison_data()`: Returns aggregated Productivity and Sleep Hours by Stress Band.
 
 ---
 
@@ -254,7 +216,7 @@ This file implements:
 - Event wiring:
   - **Step headers**: toggle collapse/expand.
   - **Buttons and forms**: call the API client functions.
-  - **Refresh buttons**: re-run the corresponding step.
+  - **Navigation**: Next/Previous buttons, with a "Finish" page at the end.
 
 #### Key UX Behaviors
 
@@ -277,7 +239,7 @@ This file implements:
     - Uses `NUMERIC_COLUMNS` (matching the actual dataset).
   - Scatter dropdown:
     - Uses `SCATTER_PAIRS` with meaningful pairs (e.g. Social Media vs Stress).
-  - All call `api.fetchVizImage(endpoint)` and inject `<img src="data:image/png;base64,...">` into `#viz-container`.
+  - All call `api.fetchVizData(endpoint)` and render interactive charts using **Chart.js** (or HTML tables for correlation).
 
 - **Step 4: Model Performance**
   - `Load Model Metrics` button:
@@ -302,7 +264,7 @@ Encapsulates all backend calls:
 - `fetchModelPerformance()`
 - `predictProductivity(params)`
 - `predictStress(params)`
-- `fetchVizImage(endpoint)`
+- `fetchVizData(endpoint)`
 
 Vite’s dev server is configured (in `vite.config.ts`) to proxy `/api` to `http://localhost:8000`, so the frontend simply calls `/api/...` without worrying about CORS in dev.
 
@@ -341,7 +303,7 @@ Implements the **Neo Brutalism** look:
 ## 7. How to Extend
 
 - **Add a new visualization**
-  1. Implement a new method in `visualizations.py` returning a base64 PNG.
+  1. Implement a new method in `visualizations.py` returning the required JSON data.
   2. Expose it via a new FastAPI route in `main.py`.
   3. Add a corresponding button/handler in `frontend/src/app.ts`.
 
@@ -352,4 +314,3 @@ Implements the **Neo Brutalism** look:
   4. Add UI controls in the frontend to collect inputs and display outputs.
 
 This architecture keeps ML logic, visualizations, and transport (API + UI) cleanly separated so you can iterate on each layer independently.
-
