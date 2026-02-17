@@ -125,55 +125,55 @@ def get_model_performance():
 
 @app.get("/api/viz/distribution/{column}")
 def get_distribution(column: str):
-    """Get distribution plot for a specific column"""
+    """Get distribution data for a specific column"""
     try:
-        img_base64 = viz.plot_distribution(column)
-        return {"image": img_base64}
+        data = viz.get_distribution_data(column)
+        return data
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/api/viz/correlation")
 def get_correlation_matrix():
-    """Get correlation matrix heatmap"""
+    """Get correlation matrix data"""
     try:
-        img_base64 = viz.plot_correlation_matrix()
-        return {"image": img_base64}
+        data = viz.get_correlation_matrix_data()
+        return data
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/api/viz/scatter/{x_column}/{y_column}")
 def get_scatter_plot(x_column: str, y_column: str):
-    """Get scatter plot between two columns"""
+    """Get scatter plot data between two columns"""
     try:
-        img_base64 = viz.plot_scatter(x_column, y_column)
-        return {"image": img_base64}
+        data = viz.get_scatter_data(x_column, y_column)
+        return data
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/api/viz/boxplot/{column}")
 def get_boxplot(column: str):
-    """Get boxplot for a column"""
+    """Get boxplot data for a column"""
     try:
-        img_base64 = viz.plot_boxplot(column)
-        return {"image": img_base64}
+        data = viz.get_boxplot_data(column)
+        return data
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/api/viz/occupation-analysis")
 def get_occupation_analysis():
-    """Get analysis plots grouped by occupation"""
+    """Get analysis data grouped by occupation (gender)"""
     try:
-        img_base64 = viz.plot_occupation_analysis()
-        return {"image": img_base64}
+        data = viz.get_occupation_analysis_data()
+        return data
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/api/viz/device-comparison")
 def get_device_comparison():
-    """Get comparison plots between Android and iOS"""
+    """Get comparison data between stress bands"""
     try:
-        img_base64 = viz.plot_device_comparison()
-        return {"image": img_base64}
+        data = viz.get_device_comparison_data()
+        return data
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

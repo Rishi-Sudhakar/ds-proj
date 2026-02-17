@@ -54,3 +54,59 @@ export interface ProductivityParams extends PredictionParams {
 export interface StressParams extends PredictionParams {
   productivity_score: number;
 }
+
+// Chart Data Types
+export interface DistributionData {
+  histogram: {
+    counts: number[];
+    bin_edges: number[];
+  };
+  boxplot: {
+    min: number;
+    q1: number;
+    median: number;
+    q3: number;
+    max: number;
+    lower_whisker: number;
+    upper_whisker: number;
+  };
+}
+
+export interface CorrelationData {
+  columns: string[];
+  values: number[][];
+}
+
+export interface ScatterData {
+  points: { x: number; y: number }[];
+  trend_line: {
+    slope: number;
+    intercept: number;
+    min_x: number;
+    max_x: number;
+  };
+}
+
+export interface BoxplotData {
+  min: number;
+  q1: number;
+  median: number;
+  q3: number;
+  max: number;
+  lower_whisker: number;
+  upper_whisker: number;
+}
+
+export interface OccupationAnalysisData {
+  categories: string[];
+  series1: number[];
+  series2: number[];
+  labels: string[];
+}
+
+export interface DeviceComparisonData {
+  categories: string[];
+  series1: number[];
+  series2: number[];
+  labels: string[];
+}

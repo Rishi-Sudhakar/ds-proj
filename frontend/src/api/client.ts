@@ -41,9 +41,8 @@ export async function predictStress(params: import('../types/api').StressParams)
   return res.json();
 }
 
-export async function fetchVizImage(endpoint: string): Promise<string> {
+export async function fetchVizData<T>(endpoint: string): Promise<T> {
   const res = await fetch(`${API_BASE}${endpoint}`);
-  if (!res.ok) throw new Error(`Failed to fetch viz: ${res.status}`);
-  const data = await res.json();
-  return data.image as string;
+  if (!res.ok) throw new Error(`Failed to fetch viz data: ${res.status}`);
+  return res.json();
 }
